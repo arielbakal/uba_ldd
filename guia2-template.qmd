@@ -1,0 +1,48 @@
+---
+title: "Guía 2 - Template para estadística descriptiva"
+subtitle: "Laboratorio de datos 2023"
+author: "Ariel Bakal"
+format:
+  html: 
+    theme: cosmo
+    fontsize: 1em
+    linestretch: 1.15
+editor: source
+---
+
+## Medidas de centralidad
+
+-   media: suma de los valores sobre su cantidad
+
+$$ \text{media}(x) = \frac{1}{N} \sum_{i=1}^N  x_i$$
+
+```{r}
+# así es como lo puedo calcular en R
+x <- c(3,4,2,5,6)
+m1 <- mean(x)
+# lo calculo de otra forma para comprobar
+m2 <- sum(x)/length(x)
+print(c(m1, m2))
+```
+
+-   mediana: numero que representa la mitad de un set de datos ordenado.
+
+En R:
+
+```{r}
+# así es como lo puedo calcular en R
+x <- c(3,4,2,5,6)
+print(median(x))
+```
+
+-   moda: numero con mas frecuencia del set, pueden haber varias modas.
+
+```{r}
+#| eval: false
+#| echo: true
+#| warning: false
+
+x <- c("mandarina", "mandarina", "pera", "pera", "pera", "tomate")
+t <- table(x)
+names(which.max(t)) 
+```
