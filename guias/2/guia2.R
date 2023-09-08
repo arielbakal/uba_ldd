@@ -66,6 +66,8 @@ rango <- function(x) {return( max(x)-min(x) )}
 rango(life_expectation_1952)
 desvio_estandar(life_expectation_1952)
 
+# 2.1
+"Haria un bar plot"
 
 
 
