@@ -89,6 +89,7 @@ penguins %>%
   mutate(fm_ratio = flipper_length_mm / body_mass_g) %>%
   mutate(ratio_bin = ifelse(fm_ratio >= 0.05,"alto","bajo"))
   
+# 2.
 
 
 
