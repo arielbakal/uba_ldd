@@ -9,7 +9,7 @@
 Si, pasaria a ser categorica ordinal, ya que establecemos cierto orden jerarquico."
 
 # 1.4
-library(gapminder)
+require(gapminder)
 
 gapminder_2002 <- subset(gapminder, year == 2002)
 
@@ -66,8 +66,47 @@ rango <- function(x) {return( max(x)-min(x) )}
 rango(life_expectation_1952)
 desvio_estandar(life_expectation_1952)
 
+require(ggplot2)
+require(gapminder)
+
 # 2.1
-"Haria un bar plot"
+"Haria un bar plot porque quiero comparar valores de distintas categorias"
+
+# 2.2
+"Edad y Peso, histograma | Sexo, diagrama de pastel"
+"Para visualizar la relacion entre peso y altura, haria un grafico de dispersion donde mis ejes serian peso y altura. 
+Luego asi, podria analizar la existecia de algun patron o tendencia."
+
+# 2.3
+gapminder_2002 <- subset(gapminder, year == 2002)
+
+ggplot(gapminder_2002, aes(x = continent)) +
+  geom_bar() + 
+  labs(x = "Continente", y = "Cantidad de Paises") +
+  ggtitle("Cantidad de Paises por Continente")
+
+# 2.4
+p <- ggplot(gapminder, aes(x = continent, y = lifeExp)) +
+       geom_boxplot() 
+p
+
+# 2.5
+ggplot(gapminder, aes(x = year, y = lifeExp)) +
+  geom_line(aes(group = country)) +
+  geom_smooth(method = "lm", linewidth = 2, se = FALSE) +
+  facet_wrap(~continent)    
+  
+
+
+
+
+
+
+
+
+
+
+
 
 
 
