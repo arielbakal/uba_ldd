@@ -128,29 +128,29 @@ mayorigual.a.n(c(1,2),1)
 
 # 2.11
 
-select.na <- function(d, column) {
-  return(d %>% filter(is.na(column)))
+select.na <- function(dataframe, column) {
+  filter_dataframe <- subset(dataframe, is.na(dataframe[[column]]))
+  return(filter_dataframe)
 }
 
 df <- data.frame(x = c(1,NA,3,4,5,6), y = c(1,4,5,2,7,4))
 
 select.na(df, "x")
 
-# TODO
-
 # 2.12
-fsda <- function(df, column) {
+summary.stats <- function(data_frame, column_name) {
+  summary_stats <- data_frame %>%
+    summarise(
+      Media = mean({{column_name}}, na.rm = TRUE),
+      Mediana = median({{column_name}}, na.rm = TRUE),
+      Mínimo = min({{column_name}}, na.rm = TRUE),
+      Máximo = max({{column_name}}, na.rm = TRUE)
+    )
   
-  p <- df$column
-  
-  v <- c(mean(p), median(p), min(p), max(p))
-  
-  return(v)
+  return(summary_stats)
 }
 
-fsda(df, y)
-
-# TODO
+calculate_summary_stats(df, x)
 
 # 2.13
 
@@ -191,6 +191,34 @@ while( poblacion < 1000 ) {
 años
   
 # 3.4
+is_prime <- function(number) {
+  if (number <= 1) {
+    return(FALSE)
+  }
+  if (number <= 3) {
+    return(TRUE)
+  }
+  if (number %% 2 == 0 || number %% 3 == 0) {
+    return(FALSE)
+  }
+  i <- 5
+  while (i * i <= number) {
+    if (number %% i == 0 || number %% (i + 2) == 0) {
+      return(FALSE)
+    }
+    i <- i + 6
+  }
+  return(TRUE)
+}
 
-# TODO
+largest_prime <- 0
+
+for (i in 100:2) {
+  if (is_prime(i)) {
+    largest_prime <- i 
+    break
+  }
+}
+
+largest_prime
 
