@@ -8,3 +8,8 @@
 | 3  | [Enunciado](https://github.com/arielbakal/uba_ldd/blob/main/guias/3/guia3.pdf) |  |
 | 4  | [Enunciado](https://github.com/arielbakal/uba_ldd/blob/main/guias/4/guia4.pdf) | [Solución](https://github.com/arielbakal/uba_ldd/blob/main/guias/4/guia4.R) |
 | 5  | [Enunciado](https://github.com/arielbakal/uba_ldd/blob/main/guias/5/guia5.pdf) | [Solución](https://github.com/arielbakal/uba_ldd/blob/main/guias/5/guia5.R) |
+
+#### Trabajos Prácticos
+| TP | Enunciado | Solución |
+|----|-----------|----------|
+| 1  | [Enunciado](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp1/enunciado.pdf) |  |
