@@ -222,3 +222,91 @@ for (i in 100:2) {
 
 largest_prime
 
+# 4.1
+suma.tiradas <- function(n) {
+  caras <- c(1,2,3,4,5,6)
+  probabilidades <- c(1/6,1/6,1/6,1/6,1/6,1/6)
+  tiradas <- sample(caras, size = n, prob = probabilidades, replace = TRUE)
+  return(sum(tiradas))
+}
+resultados <- suma.tiradas(10)
+for (i in 2:10000) {
+  suma <- suma.tiradas(10)
+  resultados <- append(resultados, suma)
+}
+resultados <- data.frame(numero = resultados)
+
+ggplot(resultados, aes(x = numero)) +
+  geom_histogram()
+
+# 4.2
+N <- 50
+cumples <- sample(1:365, N, replace = TRUE)
+
+unique(cumples)
+
+# variable que va a contar las coincidencias
+n_coincidencias <- 0
+
+# simula 10000 grupos de N=50 personas y verifica si hubo coincidencias o no
+Nrep <- 10000
+for(i in 1:Nrep){
+  cumples <- sample(1:365, N, replace = TRUE)
+  if(length(unique(cumples)) < N){
+    n_coincidencias <- N - length(unique(cumples))
+  } 
+}
+
+# calcula la probabilidad estimada de coincidencias y la imprime en la consola
+p_coincidencias <- n_coincidencias / Nrep
+print(p_coincidencias)
+
+pcumples <- function(N=50, Nrep=10000){
+  cumples <- sample(1:365, N, replace = TRUE)
+  for(i in 1:Nrep){
+    cumples <- sample(1:365, N, replace = TRUE)
+    if(length(unique(cumples)) < N){
+      n_coincidencias <- N - length(unique(cumples))
+    } 
+  }
+  p_coincidencias <- n_coincidencias / Nrep
+  resultado <- 1 - p_coincidencias
+  return(resultado)
+}
+
+pcumples()
+
+pbirthday(N, classes = 365, coincident = 2)
+
+grupos <- 1:100
+p_c <- c()
+
+for (i in 1:length(grupos)) {
+  p_c <- append(p_c, pbirthday(grupos[i], classes = 365, coincident = 2))  
+}
+
+p_c <- data.frame(Prob = p_c)
+
+p_c$Grupo <- seq_along(p_c$Prob)
+
+ggplot(p_c) +
+  geom_line(mapping = aes(y = Prob, x = Grupo))
+
+# 4.3
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
