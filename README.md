@@ -11,6 +11,8 @@
 | 6  | [Enunciado](https://github.com/arielbakal/uba_ldd/blob/main/guias/6/guia6.pdf) |  |
 
 #### Trabajos Prácticos
-| TP | Enunciado | Solución |
+| TP | Enunciado | Presentación |
 |----|-----------|----------|
-| 1  | [Enunciado](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp1/enunciado.pdf) |  |
+| 1  | [Enunciado](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp1/enunciado.pdf) | [Presentación](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp1/Presentacion.pdf) |
+
+Para una mejor calidad, mirar el html de la presentacion.
