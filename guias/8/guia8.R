@@ -1,0 +1,7 @@
+require(palmerpenguins)
+require(patchwork)
+require(tidyverse)
+require(rpart)     
+require(rpart.plot)   
+require(parttree) 
+require(class)
