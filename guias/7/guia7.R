@@ -126,7 +126,61 @@ B3 + B5*long_aleta
 
 Tendran una diferencia de peso de (B3 + B5*long_aleta)"
 
+#4
+#a
+set.seed(123)
 
+total_filas <- nrow(penguins)
 
+num_filas_entrenamiento <- round(0.8 * total_filas)
 
+indices_entrenamiento <- sample(1:total_filas, num_filas_entrenamiento, replace = FALSE)
 
+datos_entrenamiento <- penguins[indices_entrenamiento, ]
+datos_prueba <- penguins[-indices_entrenamiento, ]
+
+#b,c,d
+resultados <- data.frame(Variables = character(0), ErrorAjusteEntrenamiento = numeric(0), ErrorPrediccionPrueba = numeric(0))
+
+for (num_variables in 1:6) {
+  # Seleccionar las primeras 'num_variables' variables predictoras
+  predictoras <- c("flipper_length_mm", "bill_length_mm", "bill_depth_mm", "sex", "species", "year")[1:num_variables]
+  
+  # Crear la fórmula para el modelo
+  formula <- paste("body_mass_g ~", paste(predictoras, collapse = "+"))
+  
+  # Ajustar el modelo en el grupo de entrenamiento
+  modelo <- lm(formula, data = datos_entrenamiento)
+  
+  # Calcular el error de ajuste en el grupo de entrenamiento
+  error_ajuste <- sqrt(mean((datos_entrenamiento$body_mass_g - predict(modelo, datos_entrenamiento))^2))
+  
+  # Calcular el error de predicción en el grupo de prueba
+  error_prediccion <- sqrt(mean((datos_prueba$body_mass_g - predict(modelo, datos_prueba))^2))
+  
+  # Guardar los resultados en el dataframe
+  resultados <- rbind(resultados, data.frame(Variables = paste(predictoras, collapse = ", "),
+                                             ErrorAjusteEntrenamiento = error_ajuste,
+                                             ErrorPrediccionPrueba = error_prediccion))
+}
+
+# Mostrar los resultados
+print(resultados)
+
+"A medida que agregamos variables predictoras a nuestro modelo, este se vuelve mas complejo.
+Lo cual nos brinda mas flexibilidad para adaptarse a los datos de entrenamiento, por lo que
+podriamos esperar que nuestro error disminuye.
+Es asi el caso del modelo 6, el cual tiene 6 variables predictoras y es el que tuvo el menor 
+error de ajuste.
+
+Lo mismo podriamos decir del error de prediccion. Sin embargo, el modelo 5 fue el que tuvo menor
+error de prediccion y este tiene 5 variables predictoras. Podriamos decir que complejizar el 
+modelo no implica tener menor error de prediccion, sino que existe un equilibrio entre la
+complejidad y el error.
+
+En conclusion, basándonos en estos resultados, podríamos concluir que un modelo que incluye 
+las variables flipper_length_mm, bill_length_mm, bill_depth_mm y sex (modelo 4) proporciona 
+un buen equilibrio entre la capacidad de ajuste a los datos de entrenamiento y la capacidad 
+de hacer predicciones precisas en nuevos datos (grupo de prueba). Agregar más variables no 
+parece mejorar significativamente la capacidad predictiva del modelo y puede aumentar la 
+complejidad del modelo sin un beneficio claro en términos de precisión de la predicción."
