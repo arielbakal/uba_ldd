@@ -6,6 +6,7 @@ require(rpart.plot)
 require(parttree) 
 require(class)
 
+#Parte 1
 penguins <- na.omit(penguins)
 
 ggplot(penguins, aes(x = bill_length_mm, fill = sex)) +
@@ -234,7 +235,49 @@ accuracy
 "Observamos que tenemos una mayor accuracy con el clasificador de knn que el de arboles.
 Aunque la diferencia es minima (0.015)"
 
+#Parte 2
+predictors <- c("flipper_length_mm", "body_mass_g", "bill_length_mm", "bill_depth_mm", "sex", "island", "year")
 
+"Vamos a hacer todas las combinaciones posibles de las variables predictoras, en grupos
+de 1 a 7, haciendo la sumatoria del numero combinatorio (7,k) con k=1,..,7 tenemos 127
+modelos distintos y vamos a testear cual es el modelo con mejor accuracy"
 
+set.seed(123)
+indices_entrenamiento <- sample(1:nrow(penguins), round(0.8 * nrow(penguins)), replace = FALSE)
+datos_entrenamiento <- penguins[indices_entrenamiento, ]
+datos_prueba <- penguins[-indices_entrenamiento, ]
 
+combinaciones <- lapply(1:7, function(i) t(combn(predictors, i)))
+
+# Lista para almacenar resultados
+resultados <- list()
+
+# Iterar sobre las combinaciones y ajustar/evaluar modelos
+for (i in 1:7) {
+  for (j in 1:ncol(combinaciones[[i]])) {
+    # Variables predictoras para el modelo actual
+    predictoras <- combinaciones[[i]][, j]
+    
+    # Ajustar modelo
+    modelo <- rpart(paste("species ~", paste(predictoras, collapse = " + ")), data = datos_entrenamiento)
+    
+    # Evaluar modelo en datos de prueba
+    predicciones <- predict(modelo, newdata = datos_prueba, type = "class")
+    confusion_matrix <- table(predicciones, datos_prueba$sex)
+    accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
+    print(accuracy)
+    
+    # Almacenar resultados
+    resultados[[paste(predictoras, collapse = ", ")]] <- accuracy
+  }
+}
+
+# Encontrar la mejor combinación de variables predictoras
+mejor_combinacion <- names(resultados)[which.max(unlist(resultados))]
+mejor_combinacion
+
+"Observamos que tenemos la mejor accuracy con el modelo species ~ sex, que es de una sola variable
+predictora!"
+
+"Veamos algun modeo k-nn"
 
