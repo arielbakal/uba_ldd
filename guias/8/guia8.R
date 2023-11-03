@@ -259,13 +259,13 @@ for (i in 1:7) {
     predictoras <- combinaciones[[i]][, j]
     
     # Ajustar modelo
-    modelo <- rpart(paste("species ~", paste(predictoras, collapse = " + ")), data = datos_entrenamiento)
+    modelo <- rpart(paste("species ~", paste(predictoras, collapse = " + ")), 
+                    data = datos_entrenamiento)
     
     # Evaluar modelo en datos de prueba
     predicciones <- predict(modelo, newdata = datos_prueba, type = "class")
     confusion_matrix <- table(predicciones, datos_prueba$sex)
     accuracy <- sum(diag(confusion_matrix)) / sum(confusion_matrix)
-    print(accuracy)
     
     # Almacenar resultados
     resultados[[paste(predictoras, collapse = ", ")]] <- accuracy
@@ -277,7 +277,63 @@ mejor_combinacion <- names(resultados)[which.max(unlist(resultados))]
 mejor_combinacion
 
 "Observamos que tenemos la mejor accuracy con el modelo species ~ sex, que es de una sola variable
-predictora!"
+predictora!. Esto se podria deberse a que el sexo del punguino esté fuertemente correlacionado con la especie 
+del pinguino.
+Sin embargo, tuvo una pobre accuracy del 0.418.
+Probemos usando el metodo k-nn"
 
-"Veamos algun modeo k-nn"
+set.seed(123)
+indices_entrenamiento <- sample(1:nrow(penguins), round(0.8 * nrow(penguins)), replace = FALSE)
+datos_entrenamiento <- penguins[indices_entrenamiento, ]
+datos_prueba <- penguins[-indices_entrenamiento, ]
+
+datos_entrenamiento$sex <- as.integer(factor(datos_entrenamiento$sex))
+datos_entrenamiento$island <- as.integer(factor(datos_entrenamiento$island))
+datos_entrenamiento$year <- as.integer(factor(datos_entrenamiento$year))
+
+datos_prueba$sex <- as.integer(factor(datos_prueba$sex))
+datos_prueba$island <- as.integer(factor(datos_prueba$island))
+datos_prueba$year <- as.integer(factor(datos_prueba$year))
+
+predictors <- c("flipper_length_mm", "body_mass_g", "bill_length_mm", "bill_depth_mm", "sex", "island", "year")
+
+combinaciones <- lapply(1:7, function(i) t(combn(predictors, i)))
+
+resultados <- list()
+target <- "species"
+
+for (i in 1:7){
+  
+  for (j in 1:ncol(combinaciones[[i]])){
+    
+    predictoras <- combinaciones[[i]][, j]
+    
+    error_data <- data.frame(k = numeric(), error = numeric())
+    
+    for (k in seq(1, 20, by = 2)){
+      knn_model <- knn(train = datos_entrenamiento[predictoras], 
+                       test = datos_prueba[predictoras], 
+                       cl = datos_entrenamiento[[target]], 
+                       k = k)
+      
+      error <- 1 - sum(knn_model == datos_prueba[[target]]) / nrow(datos_prueba)
+      error_data <- rbind(error_data, data.frame(k = k, error = error))
+    }
+    
+    optimal_k <- error_data[which.min(error_data$error), "k"]
+    
+    optimal_knn_model <- knn(train = datos_entrenamiento[predictoras], 
+                             test = datos_prueba[predictoras], 
+                             cl = datos_entrenamiento[[target]], 
+                             k = optimal_k)
+    
+    accuracy <- sum(optimal_knn_model == datos_prueba[[target]]) / nrow(datos_prueba)
+    
+    resultados[[paste(predictoras, collapse = "," )]] <- accuracy
+  }
+}
+mejor_combinacion <- names(resultados)[which.max(unlist(resultados))]
+mejor_combinacion
+
+
 
