@@ -57,6 +57,76 @@ rpart.plot(fit)
 
 
 
+# Define the complexity parameter (cp) values to be tuned
+cp_values <- c(0.001, 0.01, 0.1, 0.2, 0.5)
+
+# Initialize a vector to store accuracy values for different cp values
+accuracy_values <- numeric(length(cp_values))
+
+# Perform cross-validation with different cp values
+for (i in 1:length(cp_values)) {
+  fit <- rpart(type ~ title_has_excl + negative + title_words, 
+               data = datos_entrenamiento, 
+               method = "class", 
+               control = rpart.control(cp = cp_values[i]))
+  
+  preds <- predict(fit, newdata = datos_prueba, type = "class")
+  
+  # Calculate accuracy
+  accuracy <- sum(preds == datos_prueba$type) / nrow(datos_prueba)
+  accuracy_values[i] <- accuracy
+}
+
+# Get the best cp value
+best_cp <- cp_values[which.max(accuracy_values)]
+
+# Build the final model with the best cp value
+fit <- rpart(type ~ title_has_excl + negative + title_words, 
+                     data = datos_entrenamiento, 
+                     method = "class", 
+                     control = rpart.control(cp = best_cp))
+
+rpart.plot(fit)
+
+"Accuracy del 0.73 con rpart y mejor cp value"
+
+
+params <- list(cp = c(0.001, 0.01, 0.1, 0.2, 0.5),
+               minsplit = c(2, 5, 10),
+               minbucket = c(1, 5, 10),
+               maxdepth = c(3, 5, 7),
+               xval = 5) # Number of cross-validations
+
+# Initialize a vector to store accuracy values for different parameter combinations
+accuracy_values <- numeric(length(params$cp) * length(params$minsplit) * length(params$minbucket) * length(params$maxdepth))
+
+# Perform cross-validation with different parameter combinations
+i <- 1
+for (cp in params$cp) {
+  for (minsplit in params$minsplit) {
+    for (minbucket in params$minbucket) {
+      for (maxdepth in params$maxdepth) {
+        fit <- rpart(type ~ title_has_excl + negative + title_words, 
+                     data = datos_entrenamiento, 
+                     method = "class", 
+                     control = rpart.control(cp = cp, minsplit = minsplit, minbucket = minbucket, maxdepth = maxdepth))
+        
+        preds <- predict(fit, newdata = datos_prueba, type = "class")
+        
+        # Calculate accuracy
+        accuracy <- sum(preds == datos_prueba$type) / nrow(datos_prueba)
+        accuracy_values[i] <- accuracy
+        i <- i + 1
+      }
+    }
+  }
+}
+
+
+"maximo accuracy 0.73, no sirve probar todo tipo de parametros" 
+
+
+
 predictors <- c("title_has_excl", "negative")
 target <- "type"
 
@@ -66,7 +136,8 @@ for (k in seq(1, 40, by = 2)) {
   knn_model <- knn(train = datos_entrenamiento[predictors], 
                    test = datos_prueba[predictors], 
                    cl = datos_entrenamiento[[target]], 
-                   k = k)
+                   k = k,
+                   prob = TRUE)
   
   error <- 1 - sum(knn_model == datos_prueba[[target]]) / nrow(datos_prueba)
   error_data <- rbind(error_data, data.frame(k = k, error = error))
@@ -84,7 +155,8 @@ ggplot(error_data, aes(x = k, y = error)) +
 optimal_knn_model <- knn(train = datos_entrenamiento[predictors], 
                          test = datos_prueba[predictors], 
                          cl = datos_entrenamiento[[target]], 
-                         k = optimal_k)
+                         k = optimal_k,
+                         prob = TRUE)
 
 accuracy <- sum(optimal_knn_model == datos_prueba[[target]]) / nrow(datos_prueba)
 accuracy
