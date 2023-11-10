@@ -13,9 +13,9 @@
 | 8  | [Enunciado](https://github.com/arielbakal/uba_ldd/blob/main/guias/8/guia8.pdf) | [Solución](https://github.com/arielbakal/uba_ldd/blob/main/guias/8/guia8.R) |
 
 #### Trabajos Prácticos
-| TP | Enunciado | Presentación |
-|----|-----------|----------|
-| 1  | [Enunciado](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp1/enunciado.pdf) | [Presentación](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp1/Presentacion.pdf) |
-| 2  | [Enunciado](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp2/enunciado.pdf) |  |
+| TP | Enunciado | Presentación | Quarto |
+|----|-----------|----------|---------|
+| 1  | [Enunciado](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp1/enunciado.pdf) | [Presentación](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp1/Presentacion.pdf) | [Quarto](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp1/presentacion/presentacion.qmd) 
+| 2  | [Enunciado](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp2/enunciado.pdf) | [Presentación](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp2/presentacion.pdf) | [Quarto](https://github.com/arielbakal/uba_ldd/blob/main/tps/tp2/presentacion.qmd)
 
 Para una mejor calidad, mirar el html de la presentacion.
