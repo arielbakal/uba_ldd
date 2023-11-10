@@ -1,0 +1,447 @@
+---
+title: "Trabajo Práctico 2"
+subtitle: "Laboratorio de Datos 2C 2023 (comision: Guillermo Solovey)"
+format: html
+self-contained: true
+editor: visual
+---
+
+## Integrantes
+
+-   Ariel Bakal, LU 1014/22
+-   Tomás Agustín Rivera Solari, LU 865/22
+-   Leandro Figueroa Isarrualde LU 213/17
+
+## Objetivos
+
+El objetivo de este trabajo práctica es utilizar las herramientas aprendias para implementar modelos predictivos.
+
+En primer lugar, se elaborara un modelo de regresión para predecir el número de usos diarios del sistema de Ecobici. El dataset `clima_ecobici` contiene información registrada por la estación meteorológica del Aeroparque durante todos los días del 2022 y el número total de usos diarios de bicicletas del sistema Ecobici en la CABA.
+
+Luego, desarrollaremos un clasificador de noticias en "reales" o "fake-news". El dataset contiene información sobre 150 noticias, algunas reales y otras falsas.
+
+Los paquetes utilizados en este trabajo son:
+
+```{r}
+require(ggplot2)
+require(dplyr)
+require(class)
+require(rpart)
+require(rpart.plot)
+require(tidyverse)
+```
+
+Los dataframes se encuentra aquí:
+
+```{r}
+load("tp2.RData")
+```
+
+## Parte 1: Regresión
+
+Para determinar nuestras variables predictoras, realizamos distintas visualizaciones.
+
+Comencemos viendo que sucede cuando comparamos el número de viajes con la temperatura:
+
+```{r}
+ggplot(clima_ecobici, aes(tavg,n)) + geom_point() + geom_smooth(method = "lm")
+```
+
+Como podemos ver, no parece haber una relación lineal, realmente significativa entre la temperatura promedio y la cantidad de viajes. Sin embargo, al existir una relación, no la descartaremos de momento.
+
+Ahora, veamos que sucede con el viento:
+
+```{r}
+ggplot(clima_ecobici, aes(wspd, n)) + geom_point() + geom_smooth(method = "lm")
+```
+
+Como se observa, no hay una relación entre la velocidad del viento, y la cantidad de viajes realizados. Por lo tanto, podemos descartar esta variable como posible variable predictora.
+
+Obsevemos que sucede con la presión:
+
+```{r}
+ggplot(clima_ecobici, aes(pres, n)) + geom_point() + geom_smooth(method = "lm")
+```
+
+Como podemos ver, exista una relación lineal entre la presión y la cantidad de viajes. Sin embargo, comparando este gráfico con el de temperatura, esta relación parece ser más debil que la que relaciona a la temperatura con la cantidad de viajes.
+
+Ahora, observemos que sucede durante los días con lluvia. Para esto, veamos el promedio de viajes en cada tipo de día.
+
+Empecemos por los días sin lluvia:
+
+```{r}
+siLlueve <- clima_ecobici %>% 
+  filter(prcp > 2.0) %>% 
+  summarise(viajes_promedio = mean(n))
+
+print(siLlueve)
+```
+
+Y los días sin lluvia:
+
+```{r}
+noLlueve <- clima_ecobici %>% 
+  filter(prcp <= 2.0) %>% 
+  summarise(viajes_promedio = mean(n))
+
+print(noLlueve)
+```
+
+Como vemos, existe una diferencia considerable entre ambos promedios. Haciendo cálculos, llegamos a que, durante los días con lluvia, la cantidad de viajes se reducen casi un 20%. Por lo tanto, es una variable a tener en cuenta.
+
+Una pequeña observación a aclarar es que consideramos días con lluvia a aquellos en las que las precipitaciones superan los 2mm, ya que lluvias con precipitaciones menores se consideran lluvias debiles, por lo que asumimos que tendrán un impacto menor en el uso de la Ecobici.
+
+Finalemente, observemos que sucede con los días laborables.
+
+En primer lugar, separemos los días laborables de los no laborables, siendo estos los fines de semana y los feriados que se registran en la página web del Gobierno Nacional, durante el año 2022:
+
+```{r}
+diasLaborables <- clima_ecobici %>% 
+  filter(!weekdays(date) %in% c("Saturday","Sunday")) %>% 
+  filter(!date %in% as.Date(c("2022-02-28", "2022-03-01", "2022-03-24","2022-04-14","2022-04-15","2022-04-22","2022-05-02",
+                              "2022-05-18","2022-05-25", "2022-06-17", "2022-06-20", "2022-08-15", "2022_09-26","2022-09-27",
+                              "2022-10-05","2022-10-07","2022-10-10", "2022-11-21", "2022-12-08", "2022-12-09")))
+
+finesDeSemana<- clima_ecobici %>%
+  filter(weekdays(date) %in% c("Saturday","Sunday"))
+
+feriados <- clima_ecobici %>%
+  filter(date %in% as.Date(c("2022-02-28", "2022-03-01", "2022-03-24","2022-04-14","2022-04-15","2022-04-22","2022-05-02",
+                              "2022-05-18","2022-05-25", "2022-06-17", "2022-06-20", "2022-08-15", "2022_09-26","2022-09-27",
+                              "2022-10-05","2022-10-07","2022-10-10", "2022-11-21", "2022-12-08", "2022-12-09")))
+
+diasNoLaborables <- rbind(finesDeSemana, feriados)
+diasNoLaborables <- diasNoLaborables %>%  
+  arrange(date)
+```
+
+Ya separados ambos días, veamos el promedio de uso. Primero, veamoslo durante los días laborables:
+
+```{r}
+usoDL <- diasLaborables %>% 
+  summarise(promedio_viajes = mean(n))
+
+print(usoDL)
+```
+
+Y los días no laborables:
+
+```{r}
+usoDNL <- diasNoLaborables %>% 
+  summarise(promedio_viajes = mean(n))
+
+print(usoDNL)
+```
+
+Como se ve, existe una enorme diferencia entre los días laborables y los no laborables. Haciendo cálculos, llegamos a que, durante los días no laborables, el uso de la Ecobici se reduce un 65%. Por lo tanto, esta será una de nuestras variables predictoras.
+
+Con todo esto, ya podemos definir cuales serán nuestras variables predictoras. Como acabamos de mencionar, una de ellas será si el día es laborable o no. La otra estará entre si es un día lluvioso o no, y la temperatura promedio.
+
+Para determinar a una de estas dos, observamos nuevamente el gráfico de la temperatura, y detectamos dos grandes grupos de datos, apartados. Unos entre los 8000 y 12000 viajes (eje Y), y el otro entre los 2000 y 5000 viajes. Estos valores, son cercanos al promedio de viajes durante los días laborables y no laborables respectivamente. Por lo tanto, suponemos que la tendencia observada en ese gráfico, puede tener más que ver con esto, que con la temperatura en sí.
+
+Corroboremoslo:
+
+```{r}
+feriados <- c("2022-02-28", "2022-03-01", "2022-03-24","2022-04-14","2022-04-15","2022-04-22","2022-05-02",
+              "2022-05-18","2022-05-25", "2022-06-17", "2022-06-20", "2022-08-15", "2022_09-26","2022-09-27",
+              "2022-10-05","2022-10-07","2022-10-10", "2022-11-21", "2022-12-08", "2022-12-09")
+
+es_dia_laborable <- function(fecha,feriados) {
+  if(weekdays(fecha) %in% c("Saturday","Sunday")) {
+    return("No laborable")
+  }
+  if(fecha %in% as.Date(feriados)) {
+    return("No laborable")
+  }
+  return("Laborable")
+}
+
+clima_ecobici_completo <- clima_ecobici %>% 
+  mutate(es_laborable = sapply(date, es_dia_laborable, feriados)) %>% 
+  mutate(llueve = ifelse(prcp == 0.0, "No", "Si"))
+```
+
+Creamos una función para asignarle a cada día si es laborable o no. Ahora, hagamos un gráfico:
+
+```{r}
+ggplot(clima_ecobici_completo, aes(tavg,n,color=es_laborable)) + geom_point() + geom_smooth(method = "lm")
+```
+
+Efectivamente, como habíamos pensado, ambos grupos de datos correspondían a los días laborables y no laborables. Como se ve en este nuevo gráfico, la relación entre la cantidad de viajes y la temperatura no es lineal. Por lo tanto, no tomaremos la temperatura como variable predictora.
+
+La diferencia entre las tendencias de ambos gráficos de temperatura, se debe a la paradoja de Simpson.
+
+Ya con nuestra variables predictoras definidas (si llueve o no; y si es día laborable o no), pasaremos a crear nuestro modelo:
+
+```{r}
+modelo1 <- lm(n ~ es_laborable * llueve, clima_ecobici_completo)
+```
+
+Ya con nuestro modelo, veamos su fiabilidad con el R Squared, o el Coeficiente de Determinación:
+
+```{r}
+print(summary(modelo1)$r.squared)
+```
+
+El Coeficiente de Determinación es una medida para determinar que tan fiable es un modelo lineal predictivo. Toma valores de entre 0 y 1. Cuanto más cerca de 1 este, mejor será el modelo. En nuestro caso, obtuvimos un coeficiente de 0.72, lo que significa es que el modelo es lo suficientemente preciso como para ser considereado fiable.
+
+Ahora interpretemos los coeficientes del modelo:
+
+```{r}
+coeficientes1 <- coef(modelo1)
+print(coeficientes1)
+```
+
+Observamos cuatro coeficientes:
+
+-   `Intercept`: Este es el valor del modelo cuando todas las variables predictoras son iguales a cero.
+
+-   `es_laborableNo laborable`: Este coeficiente está asociado a una variable binaria llamada "es_laborable". Cuando la variable corresponde a "No Laborable", el modelo disminuye el valor.
+
+-   `llueveSi`: Este coeficiente está asociado a otra variable binaria llamada "llueve". Si esta variable es igual a 1 (llueve) en lugar de 0 (no llueve), se espera que la variable de respuesta disminuya en 1464.3453 unidades.
+
+-   `es_laborableNo laborable:llueveSi`: Este coeficiente está asociado a la interacción entre las variables "es_laborable" y "llueve"
+
+Finalmente, realizamos un gráfico para observar como nuestras variables predictoras se comportan con respecto a la cantidad de viajes:
+
+```{r}
+ggplot(clima_ecobici_completo, aes(llueve, n, fill = factor(es_laborable))) + geom_boxplot()
+```
+
+Como podemos comporbar, la cantidad de viajes disminuye cuando el día no es laborables. Y, más aún, vuelve a disminuir durante los días con lluvia.
+
+## Parte 2: Clasificación
+
+EL objetivo de esta parte es desarrollar un clasificador de noticias en “reales” o “fake-news”. Trabajaremos con el dataset fake_news, el cual, contiene información sobre 150 noticias, algunas reales y otras falsas.
+
+Para este clasificador utilizaremos las siguientes variables predictoras:
+
+- ```title_has_excl```: variable binaria que indica si el título de la noticia tiene o no signos de exclamación.
+- ```negative```: porcentaje estimado de palabras en el título que tienen connotaciones negativas.
+- ```title_words```: número de palabras en el título
+
+Y las usaremos para predecir la variable ```type```
+
+Primero veamos como nos podemos convencer de que estas variables son potenciales a la hora de crear un clasificador.
+
+```{r}
+fake_news_filtrado<-fake_news%>%select(title_has_excl,negative,title_words,type)
+ggplot(data=fake_news_filtrado,aes(x=type,y=negative))+geom_boxplot()+
+  labs(x="Tipo",y="Promedio",title ="Connotaciones negativas")
+```
+
+Observemos como las noticias "fakes" tienen mayor promedio de connotaciones negativas. Notar tambien que tenemos un promedio atipico de una noticia fake, la cual tiene un promedio bastante alto en comparacion a los demas.
+Esto nos dice que ```negative``` es potencial predictor para clasificar nuestras noticias.
+
+Luego,
+
+```{r}
+ggplot(data = fake_news_filtrado,aes(x=type,y=title_words))+geom_boxplot()+
+  labs(x="Tipo",y="Cantidad",title="Palabras en el título")
+```
+Observamos lo mismo que con ```negative```, vemos como hay una diferencia notable en la cantidad de palabras (```title_words```) que hay en el titulo para cada tipo de noticia. Es mas, tenemos un caso atipico de una noticia real con una gran cantidad de palabras en el titulo, que sin embargo, no supera al maximo de palabras en el titulo que tienen las noticias falsas.
+
+Finalmente,
+
+```{r}
+ggplot(data = fake_news_filtrado,aes(type,fill=title_has_excl))+geom_bar()+
+  labs(title=" Títulos con o sin signos de exclamación",x="Tipo",y="Cantidad",fill="Estado")+
+  scale_fill_manual(values = c("grey45", "orangered"))
+```
+
+Podemos concluir que las noticias falsas tienden a tener una gran cantidad de signos de exclamacion, y marcan una gran diferencia con las noticias reales. Lo cual nos dice lo potencial que es ```title_has_excl```.
+
+Ahora vamos a generar nuestros clasificadores, para eso necesitamos generar nuestros datasets de entrenamiento y prueba. En este caso utilizaremos el 80% del dataset original para el de entrenamiento y 20% para el de prueba
+
+```{r}
+set.seed(17)
+indices<-sample(1:nrow(fake_news_filtrado),size = nrow(fake_news_filtrado)*0.8,replace =F)
+train<-fake_news_filtrado[indices,]
+test<-fake_news_filtrado[-indices,]
+```
+
+Empezamos probando un clasificador k-NN. Para averiguar el k que mejor clasifica, realizamos un for el cual prueba todos los k y nos dice cual tiene mejor accuracy
+
+```{r}
+k<-1:100
+output<-data.frame(k,promedio=0)
+
+for(n in k){
+  fake_news_knn<-knn(train=train[,-4],cl=train[,4],test=test[,-4],k=n)
+
+  output$promedio[n]<- mean(fake_news_knn==test[,4])
+}
+```
+
+Veamos como se comporta el accuracy del modelo en funcion de k
+
+```{r}
+output %>% 
+  ggplot() +
+  aes(k, promedio) +
+  geom_line()+
+  labs(title = "Accuracy para distintos valores de k",y="Accuracy")
+
+```
+
+Podemos ver que tenemos varios k con mejor accuracy, los cuales son:
+
+```{r}
+mejor_k<-output%>%filter(promedio==max(promedio))
+mejor_k
+```
+
+Finalmente, tenemos un clasificador k-NN con k=17 con 0.76 de accuracy. El cual tiene la siguiente matriz de confusion:
+
+```{r}
+confusion_matrix <- table(fake_news_knn,test[,4])
+
+confusion_matrix_plot <- as.data.frame(as.table(confusion_matrix))
+names(confusion_matrix_plot) <- c("Predicción", "Observación", "Frecuencia")
+ggplot(confusion_matrix_plot, aes(x = Predicción, y = Observación, fill = Frecuencia)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  geom_text(aes(label = Frecuencia), vjust = 1) +
+  labs(title = "Matriz de Confusión",
+       x = "Predicción",
+       y = "Observación") +
+  theme_minimal()
+```
+
+Sin embargo, este no es el unico clasificador que podemos probar. Pasamos a probar arboles clasificadores con el mismo dataset de entrenamiento y prueba:
+
+Comenzamos con un modelo simple:
+
+```{r}
+arbol_fake_news<-rpart(type~.,data=train)
+```
+```{r}
+rpart.plot(arbol_fake_news,extra=1)
+```
+
+Con la siguiente matriz de confusion
+
+```{r}
+predicciones<-predict(arbol_fake_news,test[,-4],type = "class")
+
+confusion_matrix<-table(predicciones,test[,4])
+
+confusion_matrix_plot <- as.data.frame(as.table(confusion_matrix))
+names(confusion_matrix_plot) <- c("Predicción", "Observación", "Frecuencia")
+ggplot(confusion_matrix_plot, aes(x = Predicción, y = Observación, fill = Frecuencia)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  geom_text(aes(label = Frecuencia), vjust = 1) +
+  labs(title = "Matriz de Confusión",
+       x = "Predicción",
+       y = "Observación") +
+  theme_minimal()
+```
+
+Y un accuracy de: 
+
+```{r}
+accuracy_rpart<-sum(diag(confusion_matrix))/nrow(test)
+accuracy_rpart
+```
+
+El cual es bajo, incluso menor que nuestro modelo k-NN. Proponemos probar ajustando nuestro modelo con distintos parametros. En este caso probaremos con distintos valores de minsplit para ver si logramos mejorar nuestra accuracy
+
+```{r}
+minsplit<-1:100
+output2<-data.frame(minsplit,accuracy=0)
+
+for(n in k){
+  arbol_fake_news<-rpart(type~.,data=train,minsplit=n)
+
+  predicciones<-predict(arbol_fake_news,test[,-4],type = "class")
+
+  matriz_prueba<-table(predicciones,test[,4])
+
+  accuracy_prueba<-sum(diag(matriz_prueba))/nrow(test)
+
+  output2$accuracy[n]<- accuracy_prueba
+}
+
+output2 %>% 
+  ggplot() +
+  aes(minsplit, accuracy) +
+  geom_line()+
+  labs(title = "Accuracy para distintos valores de minsplit",y="Accuracy")
+```
+
+Observamos distintos valores de minsplit los cuales obtienen una mejor accuracy
+
+```{r}
+mejor_minsplit<-output2%>%filter(accuracy==max(accuracy))
+mejor_minsplit
+```
+
+Nos quedamos con minsplit 10 con una accuracy de 0.73. Una accuracy mucho mejor que la del arbol clasificador anterior. Observemos como cambia nuestro arbol 
+
+```{r}
+arbol_fake_news<-rpart(type~.,data=train,minsplit=10)
+rpart.plot(arbol_fake_news,extra=1)
+```
+
+He aqui, su matriz de confusion
+
+```{r}
+predicciones<-predict(arbol_fake_news,test[,-4],type = "class")
+
+confusion_matrix<-table(predicciones,test[,4])
+
+confusion_matrix_plot <- as.data.frame(as.table(confusion_matrix))
+names(confusion_matrix_plot) <- c("Predicción", "Observación", "Frecuencia")
+ggplot(confusion_matrix_plot, aes(x = Predicción, y = Observación, fill = Frecuencia)) +
+  geom_tile(color = "white") +
+  scale_fill_gradient(low = "lightblue", high = "darkblue") +
+  geom_text(aes(label = Frecuencia), vjust = 1) +
+  labs(title = "Matriz de Confusión",
+       x = "Predicción",
+       y = "Observación") +
+  theme_minimal()
+```
+
+```{r}
+accuracy_rpart<-sum(diag(confusion_matrix))/nrow(test)
+accuracy_rpart
+```
+
+Finalmente obtenemos dos modelos clasificadores:
+
+- k-NN con 0.76 accuracy
+- Arbol con 0.73 accuracy
+
+Por ultimo se propone un nuevo articulo con diferentes valores y podemos ver la probabilidad que nos brinda nuestro arbol clasificador de que el articulo sea fake 
+
+```{r}
+nuevo_articulo<-data.frame(title_has_excl=FALSE,negative=6,title_words=15)
+
+predict(arbol_fake_news,newdata = nuevo_articulo)
+```
+
+El cual es de una probabilidad de 73,1%
+
+## Conclusión
+
+Tras la realización del trabajo, y analizando lo realizado, pudimos extraer algunas conclusiones. 
+
+En primer lugar, a la hora de realizar un modelo por regresión lineal, notamos como variables que pueden tener relación con aquella que queremos predecir, no siempre nos sirven para ajustar nuestro modelo. Por ejemplo, en el caso de la temperatura, se ve como la distribución de puntos (tanto el grupo laborable como el grupo no laborable) tienen una tendencia parabólica. Ahora bien, no presentan una tendencia lineal, por lo tanto, a pesar de que se pueda extraer una relación entre la temperatura y la cantidad de viajes realizados, esta no nos sirve para ajustar nuestro modelo.
+
+Además, obsevamos como una variable, al ser mucho más importante que las demas, puede condicionar el analisis del resto de variables. Esto lo pudimos ver con la temperatura, ya que obteníamos resultados ligeramente distintos, si, además de relacionar la temperatura con la cantidad de viajes, tomabamos en cuenta si el día era laborable o no.
+
+Por otro parte, a la hora de clasificar, llegamos a la conslusión de la importancia que significa realizar un analisis previo, que optimiza la elección de los clasificadores a utilizar. Realizando el trabajo, nos encontramos con diferencias en la accuracy del 6% o 7%, cuando la , por ejemplo, k utilizada para el método de clasificación k-NN no era la óptima. Observamos como, al ir ajustando esto valores, obteníamos una mayor accuracy. Lo cual consideramos importante, a la hora de evaluar la efectividad del modelo.
+
+Finalmente, consideramos que estos pequeños ajustes que fuimos realizando, para mejorar el modelo aunque sea un 2% o un 3%, fueron realmente enriquecedores, debido a que nos permitieron comprender como ajustar estos modelos de forma tal de obtener el mejor resultado posible.
+
+
+
+
+
+
+
+
+
+
+
