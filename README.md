@@ -1,4 +1,4 @@
-# Laboratorio de Datos 2C2023 - Instituto de Cálculo, FCEN, UBA.
+# Laboratorio de Datos 2C2023
 
 #### Guías
 | Guía  | Enunciado | Solución |
