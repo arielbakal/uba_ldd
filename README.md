@@ -1,5 +1,7 @@
 # Laboratorio de Datos 2C2023
 
+Este cuatrimestre lo dió el Insituto de Cálculo y utilizamos el lenguaje R
+
 #### Guías
 | Guía  | Enunciado | Solución |
 |-------|-----------|----------|
